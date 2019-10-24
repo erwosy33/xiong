@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.2.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-3.2.xsd">
+	<!-- 配置扫描注解定义的业务Bean -->
+	<context:component-scan base-package="com.service"></context:component-scan>
+	
+	<!-- 读取数据库配置文件 [356页] -->
+    <context:property-placeholder location="classpath:database.properties"/>
+	
+	<!-- JNDI获取数据源(使用dbcp连接池) -->  
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" scope="singleton">
+    		<property name="driverClassName" value="${driver}" />  
+			<property name="url" value="${url}" />  
+			<property name="username" value="${user}" />  
+			<property name="password" value="${password}" />
+			<property name="initialSize" value="${initialSize}"/>
+			<property name="maxActive" value="${maxActive}"/>
+			<property name="maxIdle" value="${maxIdle}"/>
+			<property name="minIdle" value="${minIdle}"/>
+			<property name="maxWait" value="${maxWait}"/>
+			<property name="removeAbandonedTimeout" value="${removeAbandonedTimeout}"/>
+			<property name="removeAbandoned" value="${removeAbandoned}"/>
+			<!-- sql 心跳 -->
+			<property name= "testWhileIdle" value="true"/>
+			<property name= "testOnBorrow" value="false"/>
+			<property name= "testOnReturn" value="false"/>
+			<property name= "validationQuery" value="select 1"/>
+			<property name= "timeBetweenEvictionRunsMillis" value="60000"/>
+			<property name= "numTestsPerEvictionRun" value="${maxActive}"/>
+    </bean>
+  
+	
+	
+	<!-- 定义事务管理器 -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	    <property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	
+	<!-- 通过<tx:advice>标签为指定的事务管理器设置事务属性 -->
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+	    <!-- 定义属性，声明事务规则 -->
+	    <tx:attributes>
+	        <tx:method name="*" propagation="REQUIRED" rollback-for="Exception"/>
+	    </tx:attributes>
+	</tx:advice>
+	
+	<!-- 定义切面 -->
+	<aop:aspectj-autoproxy/>
+	<aop:config proxy-target-class="true">
+	    <!-- 定义切入点 -->
+	    <aop:pointcut expression="execution(* *com.service..*(..))" id="serviceMethod"/>
+	    <!-- 将事务增强与切入点组合 -->
+	    <aop:advisor advice-ref="txAdvice" pointcut-ref="serviceMethod"/>
+	</aop:config>
+	
+	<!-- 配置sqlSessionFactoryBean -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+	    <!-- 引用数据源组件 -->
+	    <property name="dataSource" ref="dataSource"></property>
+	    <!-- 引用mybatis配置文件中的配置 -->
+	    <property name="configLocation" value="classpath:mybatis-config.xml"></property>
+	    <!-- 配置SQL映射文件信息 -->
+	    <property name="mapperLocations">
+	        <list>
+	            <value>classpath:com/dao/**/*.xml</value>
+	        </list>
+	    </property>
+	</bean>
+	
+	<!-- 配置DAO -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+	    <property name="basePackage" value="com.dao"></property>
+	</bean>
+</beans>

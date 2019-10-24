@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+	<!-- http://localhost:8080/SSM-2019.7.11/index.html -->
+	<!-- 扫描控制器的注解 -->
+	<context:component-scan base-package="com.controller"></context:component-scan>
+
+
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+			<!-- 通过设置StringHttpMessageConverter中的supportedMediaTypes 属性指定媒体类型为application/json 
+				字符编码为UTF-8 [337-338] -->
+			<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>application/json;charset=UTF-8</value>
+					</list>
+				</property>
+			</bean>
+			<bean
+				class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>text/html;charset=UTF-8</value>
+						<value>application/json</value>
+					</list>
+				</property>
+				<property name="features">
+					<list>
+						<!-- Date的日期转换器 [340页] 可以按照FastJson默认的日期格式进行转换输出 -->
+						<value>WriteDateUseDateFormat</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+	
+	<!-- 静态资源(js,css,images)文件的引用 -->
+	<mvc:resources location="/statics/" mapping="/statics/**"></mvc:resources>
+
+	<!-- 配置多视图解析器：允许同样的内容数据呈现不同的view [343页] -->
+	<bean
+		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<property name="favorParameter" value="true" />
+		<property name="defaultContentType" value="text/html" />
+		<property name="mediaTypes">
+			<map>
+				<entry key="html" value="text/html;charset=UTF-8" />
+				<entry key="json" value="application/json;charset=UTF-8" />
+				<entry key="xml" value="application/xml;charset=UTF-8" />
+			</map>
+		</property>
+		<!-- 完成视图对应 -->
+		<property name="viewResolvers">
+			<list>
+				<bean
+					class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+					<property name="prefix" value="/WEB-INF/page/" />
+					<property name="suffix" value=".jsp" />
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<!--309页 配置MultipartResolver，用于上传文件，使用spring的CommonsMultipartResolver -->
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="maxUploadSize" value="5000000" />
+		<property name="defaultEncoding" value="UTF-8" />
+	</bean>
+
+</beans>
